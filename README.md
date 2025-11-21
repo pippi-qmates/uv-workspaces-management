@@ -21,9 +21,22 @@ A Python Test-Driven Development project using Hatch (with UV) for dependency ma
    pipx install hatch
    ```
 
-2. **Create development environment**:
+2. **Clone the repository** and start working:
    ```bash
-   hatch env create
+   git clone <repository-url>
+   cd uv-workspaces-management
+   ```
+
+3. **No manual environment creation needed!**
+   
+   Hatch automatically creates environments when you run commands:
+   ```bash
+   hatch run test  # Creates default env and runs tests
+   ```
+   
+   You can optionally pre-create environments:
+   ```bash
+   hatch env create  # Creates the default environment
    ```
 
 ## Running Tests
@@ -178,10 +191,12 @@ Each Lambda is managed through Hatch environments, allowing:
    # Update feature name and source paths
    ```
 
-5. Update environments:
+5. **Test your new Lambda:**
    ```bash
-   hatch env create
+   hatch run new-lambda:test
    ```
+   
+   Note: The environment will be created automatically on first run.
 
 ## Docker Deployment
 
@@ -222,24 +237,84 @@ Docker build cache mounts significantly speed up rebuilds. The cache persists ac
 
 ## Hatch Environments
 
-This project uses Hatch environments (with UV installer for speed) to manage Lambda-specific dependencies:
+This project uses Hatch environments (with UV installer for speed) to manage Lambda-specific dependencies.
 
 ### Available environments:
 - `default`: All Lambdas + dev tools (linting, testing, type checking)
-- `adder`: Only adder Lambda dependencies
-- `multiplier`: Only multiplier Lambda dependencies
+- `adder`: Adder Lambda + dev tools
+- `multiplier`: Multiplier Lambda + dev tools
 
-### Common commands:
+### Environment Management
+
+**List environments and their status:**
 ```bash
-# List all environments
+hatch env show
+```
+
+**Prune (remove) all environments:**
+```bash
+hatch env prune
+```
+Use this when:
+- Dependencies have changed in `pyproject.toml`
+- Environments are corrupted or behaving unexpectedly
+- You want to start fresh
+
+**Prune and recreate specific environment:**
+```bash
+hatch env prune && hatch run adder:test
+# Removes all envs, then creates and runs tests in adder env
+```
+
+**Note:** You typically don't need to manually create environments - Hatch creates them automatically on first use.
+
+### Running commands:
+```bash
+# Run in default environment (all Lambdas)
+hatch run test
+
+# Run in specific Lambda environment
+hatch run adder:test
+hatch run multiplier:test
+```
+
+## Troubleshooting
+
+### Dependencies not updating
+
+If you've modified `pyproject.toml` but changes aren't reflected:
+
+```bash
+# Remove all environments and let Hatch recreate them
+hatch env prune
+hatch run test  # Recreates default env with new dependencies
+```
+
+### Import errors or module not found
+
+```bash
+# Ensure you're in the project root directory
+pwd  # Should show .../uv-workspaces-management
+
+# Recreate the environment
+hatch env prune
+hatch run test-only
+```
+
+### Docker build fails
+
+```bash
+# Check if pyproject.toml is valid
 hatch env show
 
-# Remove and recreate all environments
-hatch env prune
-
-# Run command in specific environment
-hatch run adder:test
-
-# Run in default environment
-hatch run pytest
+# Rebuild from scratch without cache
+docker build -f docker/adder.Dockerfile --no-cache -t adder-lambda .
 ```
+
+### Slow environment creation
+
+Environment creation should be fast (thanks to UV). If it's slow:
+- Check your internet connection (first-time package downloads)
+- Check if UV is installed: `uv --version`
+- Consider using `hatch env prune` to clear corrupted cache
+
