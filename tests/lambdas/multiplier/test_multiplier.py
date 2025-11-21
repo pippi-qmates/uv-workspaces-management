@@ -1,4 +1,4 @@
-from multiplier.main import handler, multiply
+from lambdas.multiplier.main import handler, multiply
 
 
 def test_multiply() -> None:

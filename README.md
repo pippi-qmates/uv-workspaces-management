@@ -1,54 +1,107 @@
-# Python TDD Workspace
+# AWS Lambda Functions Collection
 
-A Python Test-Driven Development workspace using `uv` for dependency management, featuring multiple AWS Lambda functions organized as independent workspaces.
+A Python Test-Driven Development project using Hatch (with UV) for dependency management, featuring multiple AWS Lambda functions organized as a single project with independent environments.
 
+## Prerequisites
+
+- [Hatch](https://hatch.pypa.io/latest/install/) installed
+- [UV](https://docs.astral.sh/uv/getting-started/installation/) installed (for faster dependency installation)
 
 ## Setup
 
-1. **Install UV** (if not already installed):
+1. **Install Hatch** (if not already installed):
+   
+   **macOS/Linux:**
    ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
+   pipx install hatch
+   ```
+   
+   **Windows:**
+   ```powershell
+   pipx install hatch
    ```
 
-2. **Sync dependencies**:
+2. **Create development environment**:
    ```bash
-   uv sync
+   hatch env create
    ```
 
 ## Running Tests
 
-### Run all tests (from root):
+### Full validation for all Lambdas (recommended before commit):
 ```bash
-make test
+hatch run test
+# Runs: format + lint + typecheck + pytest (all Lambdas)
 ```
 
-### Run tests for a specific workspace:
-
+### Quick test iteration (skip static analysis):
 ```bash
-uv run --directory workspaces/adder pytest
-uv run --directory workspaces/multiplier pytest
+hatch run test-only
+# Just runs pytest for all Lambdas
+```
+
+### Full validation for specific Lambda:
+```bash
+hatch run adder:test
+# Runs: format + lint + typecheck + pytest (JUST adder)
+
+hatch run multiplier:test
+# Runs: format + lint + typecheck + pytest (JUST multiplier)
+```
+
+### Quick test for specific Lambda:
+```bash
+hatch run adder:test-only
+hatch run multiplier:test-only
 ```
 
 ## Code Quality
 
-### Linting
+### Full Validation (before commit)
 ```bash
-make lint
+hatch run test
+# Runs format + lint + typecheck + tests
 ```
 
-### Typecheck
+### Individual Commands
+
+**Linting**
 ```bash
-make typecheck
+hatch run lint
 ```
 
-### Auto-fix linting issues
+**Type Checking**
 ```bash
-uv run ruff check . --fix
+hatch run typecheck
 ```
 
-### Formatting
+**Auto-fix linting issues**
 ```bash
-make format
+hatch run ruff check src tests --fix
+```
+
+**Formatting**
+```bash
+hatch run format
+```
+
+**Quick test-only (skip static analysis)**
+```bash
+hatch run test-only
+```
+
+### Optional: Shell Aliases
+
+For shorter commands, add to your `~/.bashrc` or `~/.zshrc`:
+```bash
+alias ht='hatch run'
+```
+
+Then use:
+```bash
+ht test
+ht format
+ht adder:test
 ```
 
 ## Ruff Configuration
@@ -62,64 +115,131 @@ The project uses Ruff with the following rules enabled:
 - **N**: pep8-naming (naming conventions)
 - **ANN**: flake8-annotations (type hints enforcement)
 
-## Workspace Structure
+## Project Structure
 
-Each workspace is an independent Python package with:
-- **src/**: Source code organized as a Python package
-- **tests/**: Test files using pytest
-- **Dockerfile**: Lambda-compatible container configuration
-- **pyproject.toml**: Package metadata and dependencies
+This is a single Hatch project containing multiple Lambda functions:
 
-## Adding a New Workspace
+- **src/lambdas/**: Lambda function modules
+  - **adder/**: Addition Lambda
+  - **multiplier/**: Multiplication Lambda
+  - **common/**: Shared utilities (optional)
+- **tests/lambdas/**: Test files organized by Lambda
+- **docker/**: Dockerfile for each Lambda
+- **pyproject.toml**: Single project configuration with Hatch environments
 
-1. Create a new directory under `workspaces/`:
+Each Lambda is managed through Hatch environments, allowing:
+- Independent dependency management via optional dependencies
+- Lambda-specific test runs
+- Isolated development environments
+
+## Adding a New Lambda
+
+1. Create Lambda module:
    ```bash
-   mkdir -p workspaces/new_lambda/src/new_lambda
-   mkdir -p workspaces/new_lambda/tests
+   mkdir -p src/lambdas/new_lambda
+   touch src/lambdas/new_lambda/__init__.py
+   touch src/lambdas/new_lambda/main.py
    ```
 
-2. Create `pyproject.toml`:
-   ```toml
-   [project]
-   name = "new-lambda"
-   version = "0.1.0"
-   description = "New Lambda"
-   requires-python = ">=3.12"
-   dependencies = []
-
-   [build-system]
-   requires = ["hatchling"]
-   build-backend = "hatchling.build"
-
-   [tool.hatch.build.targets.wheel]
-   packages = ["src/new_lambda"]
+2. Create test directory:
+   ```bash
+   mkdir -p tests/lambdas/new_lambda
+   touch tests/lambdas/new_lambda/test_new_lambda.py
    ```
 
-3. Add to root workspace in `pyproject.toml`:
+3. Add to `pyproject.toml`:
    ```toml
-   dependencies = [
-       "adder",
-       "multiplier",
-       "new-lambda",  # Add this
+   [project.optional-dependencies]
+   new-lambda = [
+       # Add new-lambda dependencies here
    ]
 
-   [tool.uv.sources]
-   new-lambda = { workspace = true }
+   [tool.hatch.envs.new-lambda]
+   features = ["new-lambda"]
+   [tool.hatch.envs.new-lambda.scripts]
+   test-only = "pytest tests/lambdas/new_lambda -v"
+   test = [
+       "ruff format src/lambdas/new_lambda tests/lambdas/new_lambda",
+       "ruff check src/lambdas/new_lambda tests/lambdas/new_lambda",
+       "basedpyright src/lambdas/new_lambda tests/lambdas/new_lambda",
+       "test-only",
+   ]
+   build-docker = "docker build -f docker/new-lambda.Dockerfile -t new-lambda ."
+   
+   # Add to default env features
+   [tool.hatch.envs.default]
+   features = ["adder", "multiplier", "new-lambda", "dev"]  # Add here
    ```
 
-4. Run `uv sync` to install the new workspace
+4. Create Dockerfile:
+   ```bash
+   # Copy and modify docker/adder.Dockerfile
+   cp docker/adder.Dockerfile docker/new-lambda.Dockerfile
+   # Update feature name and source paths
+   ```
+
+5. Update environments:
+   ```bash
+   hatch env create
+   ```
 
 ## Docker Deployment
 
-Each workspace can be built and deployed independently:
+Each Lambda can be built and deployed independently:
 
+### Build Lambda image
 ```bash
-docker build -f workspaces/adder/Dockerfile -t adder-lambda .
-docker run -p 9000:8080 adder-lambda
+# Build adder
+docker build -f docker/adder.Dockerfile -t adder-lambda .
+
+# Build multiplier
+docker build -f docker/multiplier.Dockerfile -t multiplier-lambda .
+
+# Or use Hatch scripts
+hatch run adder:build-docker
+hatch run multiplier:build-docker
 ```
 
-Test the Lambda locally:
+### Test Lambda locally
 ```bash
+# Run the Lambda container
+docker run -p 9000:8080 adder-lambda
+
+# In another terminal, invoke it
 curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" \
   -d '{"a": 5, "b": 3}'
+```
+
+### Build without tests (faster)
+```bash
+docker build -f docker/adder.Dockerfile \
+  --target production \
+  -t adder-lambda .
+```
+
+### Advanced: Cache usage
+Docker build cache mounts significantly speed up rebuilds. The cache persists across builds automatically.
+
+## Hatch Environments
+
+This project uses Hatch environments (with UV installer for speed) to manage Lambda-specific dependencies:
+
+### Available environments:
+- `default`: All Lambdas + dev tools (linting, testing, type checking)
+- `adder`: Only adder Lambda dependencies
+- `multiplier`: Only multiplier Lambda dependencies
+
+### Common commands:
+```bash
+# List all environments
+hatch env show
+
+# Remove and recreate all environments
+hatch env prune
+
+# Run command in specific environment
+hatch run adder:test
+
+# Run in default environment
+hatch run pytest
 ```

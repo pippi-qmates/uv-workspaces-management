@@ -1,6 +1,6 @@
-from adder.add import add
-from adder.custom.add import custom_add
-from adder.main import handler
+from lambdas.adder.add import add
+from lambdas.adder.custom.add import custom_add
+from lambdas.adder.main import handler
 
 
 def test_add() -> None:
