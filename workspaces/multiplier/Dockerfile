@@ -1,16 +1,23 @@
-FROM public.ecr.aws/lambda/python:3.12
+FROM ghcr.io/astral-sh/uv:0.9.10 AS uv-source
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+FROM public.ecr.aws/lambda/python:3.12 AS base
 
-# Copy requirements
+# install uv
+COPY --from=uv-source /uv /uvx /bin/
+
+# set uv environment variables to compile a faster python code
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
+
+COPY . ${LAMBDA_TASK_ROOT}/
 COPY pyproject.toml uv.lock ${LAMBDA_TASK_ROOT}/
+COPY workspaces/multiplier/pyproject.toml ${LAMBDA_TASK_ROOT}/workspaces/multiplier/pyproject.toml
+COPY workspaces/multiplier/src ${LAMBDA_TASK_ROOT}/workspaces/multiplier/src
 
-# Install dependencies
-RUN uv export --frozen --format requirements-txt > requirements.txt && uv pip install -r requirements.txt --target ${LAMBDA_TASK_ROOT}
+WORKDIR ${LAMBDA_TASK_ROOT}
 
-# Copy function code
-COPY . ${LAMBDA_TASK_ROOT}
+FROM base AS production
+# Omit any development dependencies (`--no-dev`).
+RUN uv export --frozen --no-dev --no-editable -o requirements.txt --package multiplier && \
+    uv pip install -r requirements.txt --system
 
-# Set the CMD to your handler
 CMD [ "multiplier.main.handler" ]

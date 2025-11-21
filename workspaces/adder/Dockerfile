@@ -9,6 +9,9 @@ COPY --from=uv-source /uv /uvx /bin/
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
 
 COPY . ${LAMBDA_TASK_ROOT}/
+COPY pyproject.toml uv.lock ${LAMBDA_TASK_ROOT}/
+COPY workspaces/adder/pyproject.toml ${LAMBDA_TASK_ROOT}/workspaces/adder/pyproject.toml
+COPY workspaces/adder/src ${LAMBDA_TASK_ROOT}/workspaces/adder/src
 
 WORKDIR ${LAMBDA_TASK_ROOT}
 

@@ -114,8 +114,7 @@ Each workspace is an independent Python package with:
 Each workspace can be built and deployed independently:
 
 ```bash
-cd workspaces/adder
-docker build -t adder-lambda .
+docker build -f workspaces/adder/Dockerfile -t adder-lambda .
 docker run -p 9000:8080 adder-lambda
 ```
 
