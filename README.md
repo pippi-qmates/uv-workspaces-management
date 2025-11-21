@@ -2,39 +2,6 @@
 
 A Python Test-Driven Development workspace using `uv` for dependency management, featuring multiple AWS Lambda functions organized as independent workspaces.
 
-## Project Structure
-
-```
-python-tdd/
-├── workspaces/
-│   ├── adder_workspace/
-│   │   ├── src/adder/
-│   │   │   ├── __init__.py
-│   │   │   └── main.py
-│   │   ├── tests/
-│   │   │   └── test_adder.py
-│   │   ├── Dockerfile
-│   │   └── pyproject.toml
-│   └── multiplier_workspace/
-│       ├── src/multiplier/
-│       │   ├── __init__.py
-│       │   └── main.py
-│       ├── tests/
-│       │   └── test_multiplier.py
-│       ├── Dockerfile
-│       └── pyproject.toml
-├── pyproject.toml (root workspace configuration)
-└── README.md
-```
-
-## Features
-
-- **UV Workspace**: Multiple Lambda functions managed as independent workspaces
-- **Test-Driven Development**: Comprehensive test coverage with pytest
-- **Type Safety**: Full type hints enforced with Ruff's `flake8-annotations`
-- **Code Quality**: Ruff for linting and formatting
-- **Docker Support**: Each Lambda has its own Dockerfile for containerization
-- **AWS Lambda Ready**: Configured for AWS Lambda deployment
 
 ## Setup
 
@@ -57,21 +24,9 @@ uv run pytest
 
 ### Run tests for a specific workspace:
 
-**Option 1: Using --directory flag (from root)**
 ```bash
 uv run --directory workspaces/adder_workspace pytest
 uv run --directory workspaces/multiplier_workspace pytest
-```
-
-**Option 2: Change directory**
-```bash
-cd workspaces/adder_workspace
-uv run pytest
-```
-
-**Option 3: Target specific test directory**
-```bash
-uv run pytest workspaces/adder_workspace/tests/
 ```
 
 ## Code Quality
