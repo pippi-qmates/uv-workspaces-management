@@ -8,6 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+src/lambdas/*/.venv
 
 # IDE
 .vscode/

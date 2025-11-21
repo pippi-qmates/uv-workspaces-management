@@ -71,6 +71,7 @@ test = ["format", "lint", "typecheck", "test-only"]
 [tool.hatch.envs.adder]
 template = "adder"  # Self-referential: don't inherit from default
 installer = "uv"
+path = "src/lambdas/adder/.venv"  # Lambda-specific venv in project
 features = ["adder", "dev"]
 
 [tool.hatch.envs.adder.scripts]
@@ -85,6 +86,7 @@ build-docker = "docker build -f docker/adder.Dockerfile -t adder-lambda ."
 [tool.hatch.envs.multiplier]
 template = "multiplier"  # Self-referential: don't inherit from default
 installer = "uv"
+path = "src/lambdas/multiplier/.venv"  # Lambda-specific venv in project
 features = ["multiplier", "dev"]
 
 [tool.hatch.envs.multiplier.scripts]
