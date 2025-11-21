@@ -4,12 +4,44 @@ version = "0.1.0"
 description = "Python TDD Workspace"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "adder",
+    "multiplier",
+]
+
+[tool.uv.sources]
+adder = { workspace = true }
+multiplier = { workspace = true }
 
 [tool.uv.workspace]
-members = ["src/*"]
+members = ["workspaces/*"]
 
 [dependency-groups]
 dev = [
     "pytest>=8.0.0",
+    "ruff>=0.8.0",
 ]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",      
+    "W",      
+    "F",      
+    "I",      
+    "C",      
+    "B",      
+    "N",       
+    "ANN",
+]
+
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

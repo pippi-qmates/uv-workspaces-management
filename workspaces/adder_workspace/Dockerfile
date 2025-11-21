@@ -13,4 +13,4 @@ RUN uv export --frozen --format requirements-txt > requirements.txt && uv pip in
 COPY . ${LAMBDA_TASK_ROOT}
 
 # Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
-CMD [ "adder.handler" ]
+CMD [ "adder.main.handler" ]
