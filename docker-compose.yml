@@ -1,0 +1,24 @@
+services:
+  adder:
+    build:
+      context: .
+      dockerfile: docker/adder.Dockerfile
+    image: adder-lambda
+    ports:
+      - "9001:8080"
+    networks:
+      - lambda-network
+
+  multiplier:
+    build:
+      context: .
+      dockerfile: docker/multiplier.Dockerfile
+    image: multiplier-lambda
+    ports:
+      - "9002:8080"
+    networks:
+      - lambda-network
+
+networks:
+  lambda-network:
+    name: lambda-network

@@ -14,6 +14,7 @@ dependencies = []  # No shared runtime dependencies
 # Dev dependencies for local development only
 dev = [
     "basedpyright>=1.34.0",
+    "httpx>=0.27.0",  # For E2E tests (typed library)
     "pytest>=8.0.0",
     "ruff>=0.8.0",
 ]
@@ -46,6 +47,7 @@ packages = ["src/lambdas"]
 
 [tool.hatch.envs.default]
 installer = "uv"
+path = ".venv"
 features = ["adder", "multiplier", "dev"]
 
 [tool.hatch.envs.default.scripts]
@@ -53,7 +55,10 @@ features = ["adder", "multiplier", "dev"]
 format = "ruff format src tests"
 lint = "ruff check src tests"
 typecheck = "basedpyright src tests"
-test-only = "pytest"
+test-only = "pytest tests/lambdas"
+
+# E2E tests (requires docker-compose up -d to be running)
+test-e2e = "pytest tests/e2e -v"
 
 # Full validation - runs everything (recommended before commit)
 test = ["format", "lint", "typecheck", "test-only"]
@@ -64,6 +69,7 @@ test = ["format", "lint", "typecheck", "test-only"]
 # =============================================================================
 
 [tool.hatch.envs.adder]
+template = "adder"  # Self-referential: don't inherit from default
 installer = "uv"
 features = ["adder", "dev"]
 
@@ -77,6 +83,7 @@ build-docker = "docker build -f docker/adder.Dockerfile -t adder-lambda ."
 
 
 [tool.hatch.envs.multiplier]
+template = "multiplier"  # Self-referential: don't inherit from default
 installer = "uv"
 features = ["multiplier", "dev"]
 

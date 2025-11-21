@@ -9,7 +9,9 @@ A Python Test-Driven Development project using Hatch (with UV) for dependency ma
 
 ## Setup
 No setup needed other than installing Hatch and UV systemwide.
-Hatch automatically creates needed environments when you run any hatch command.
+Hatch automatically creates the virtual environment in `.venv/` when you run any hatch command.
+
+**Note**: The `.venv` directory is gitignored and will be recreated automatically when needed.
 
 ---
 
@@ -197,10 +199,26 @@ Each Lambda is managed through Hatch environments, allowing:
 
 This project uses Hatch environments (with UV installer for speed) to manage Lambda-specific dependencies.
 
-### Available environments:
-- `default`: All Lambdas + dev tools (linting, testing, type checking)
-- `adder`: Adder Lambda + dev tools
-- `multiplier`: Multiplier Lambda + dev tools
+### Why Separate Environments?
+
+- **Minimal Docker images**: Each Lambda's Docker image contains only its specific dependencies
+- **True isolation**: Test each Lambda with exactly what it will have in production
+- **Local development**: The `default` environment has all dependencies for convenience
+
+### Available Environments
+
+- **`default`**: All Lambdas + dev tools (for local development)
+  - Uses `.venv/` directory in project root
+  - Auto-detected by IDEs
+  - Fast iteration across all lambdas
+
+- **`adder`**: Only adder dependencies + dev tools
+  - Stored in Hatch's global directory
+  - Used by Docker builds to export minimal requirements
+  
+- **`multiplier`**: Only multiplier dependencies + dev tools
+  - Stored in Hatch's global directory
+  - Used by Docker builds to export minimal requirements
 
 ### Environment Management
 
@@ -209,32 +227,22 @@ This project uses Hatch environments (with UV installer for speed) to manage Lam
 hatch env show
 ```
 
-**Prune (remove) all environments:**
+**Remove and recreate environments (when dependencies change):**
 ```bash
 hatch env prune
 ```
-Use this when:
-- Dependencies have changed in `pyproject.toml`
-- Environments are corrupted or behaving unexpectedly
-- You want to start fresh
 
-**Prune and recreate specific environment:**
+**Check where environments are located:**
 ```bash
-hatch env prune && hatch run adder:test
-# Removes all envs, then creates and runs tests in adder env
+hatch env find default      # Shows: /path/to/project/.venv
+hatch env find adder        # Shows: ~/.local/share/hatch/env/virtual/...
+hatch env find multiplier   # Shows: ~/.local/share/hatch/env/virtual/...
 ```
 
-**Note:** You typically don't need to manually create environments - Hatch creates them automatically on first use.
-
-### Running commands:
-```bash
-# Run in default environment (all Lambdas)
-hatch run test
-
-# Run in specific Lambda environment
-hatch run adder:test
-hatch run multiplier:test
-```
+**Note:** 
+- The `default` environment uses `.venv/` in your project (for IDE support)
+- Lambda-specific environments (`adder`, `multiplier`) use Hatch's global directory
+- This hybrid approach gives you IDE support + minimal Docker images
 
 ## Troubleshooting
 
