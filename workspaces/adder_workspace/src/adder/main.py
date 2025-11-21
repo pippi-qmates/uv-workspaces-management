@@ -1,12 +1,6 @@
 from typing import Any, Dict
 
-
-def add(a: int, b: int) -> int:
-    return a + b
-
-
-def custom_add(a: int, b: int) -> int:
-    return a + b + 3
+from adder.custom.add import custom_add
 
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
