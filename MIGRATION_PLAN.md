@@ -149,14 +149,26 @@ packages = ["src/lambdas"]
 [tool.hatch.envs.adder]
 features = ["adder"]
 [tool.hatch.envs.adder.scripts]
-test = "pytest tests/lambdas/adder -v"
+test-only = "pytest tests/lambdas/adder -v"
+test = [
+    "ruff format src/lambdas/adder tests/lambdas/adder",
+    "ruff check src/lambdas/adder tests/lambdas/adder",
+    "basedpyright src/lambdas/adder tests/lambdas/adder",
+    "test-only",
+]
 build-docker = "docker build -f docker/adder.Dockerfile -t adder-lambda ."
 
 # Environment for multiplier Lambda
 [tool.hatch.envs.multiplier]
 features = ["multiplier"]
 [tool.hatch.envs.multiplier.scripts]
-test = "pytest tests/lambdas/multiplier -v"
+test-only = "pytest tests/lambdas/multiplier -v"
+test = [
+    "ruff format src/lambdas/multiplier tests/lambdas/multiplier",
+    "ruff check src/lambdas/multiplier tests/lambdas/multiplier",
+    "basedpyright src/lambdas/multiplier tests/lambdas/multiplier",
+    "test-only",
+]
 build-docker = "docker build -f docker/multiplier.Dockerfile -t multiplier-lambda ."
 
 # Default dev environment with all dependencies
@@ -371,10 +383,10 @@ All commands are defined in `pyproject.toml` under `[tool.hatch.envs.*.scripts]`
 **Common Development Commands:**
 
 ```bash
-# Full validation (format + lint + typecheck + tests) - RECOMMENDED
+# Full validation for ALL Lambdas (format + lint + typecheck + tests) - RECOMMENDED
 hatch run test
 
-# Quick test iteration (skip static analysis)
+# Quick test iteration for all (skip static analysis)
 hatch run test-only
 
 # Individual static analysis commands
@@ -382,14 +394,29 @@ hatch run format        # Format code
 hatch run lint          # Check linting
 hatch run typecheck     # Type checking
 
-# Lambda-specific tests
-hatch run adder:test
-hatch run multiplier:test
+# Lambda-specific full validation
+hatch run adder:test           # Full validation for JUST adder
+hatch run multiplier:test      # Full validation for JUST multiplier
 
-# Docker builds (using Hatch scripts)
+# Lambda-specific quick tests (skip static analysis)
+hatch run adder:test-only
+hatch run multiplier:test-only
+
+# Docker builds
 hatch run adder:build-docker
 hatch run multiplier:build-docker
 ```
+
+**Command Consistency:**
+
+| Command Pattern | Scope | Runs |
+|----------------|-------|------|
+| `hatch run test` | All Lambdas | format + lint + typecheck + pytest |
+| `hatch run adder:test` | Just adder | format + lint + typecheck + pytest (adder only) |
+| `hatch run multiplier:test` | Just multiplier | format + lint + typecheck + pytest (multiplier only) |
+| `hatch run test-only` | All Lambdas | pytest only |
+| `hatch run adder:test-only` | Just adder | pytest only (adder tests) |
+| `hatch run multiplier:test-only` | Just multiplier | pytest only (multiplier tests) |
 
 **Why no Makefile?**
 
@@ -478,21 +505,31 @@ Replace UV-specific content with Hatch instructions:
    ```markdown
    ## Running Tests
 
-   ### Full validation (recommended before commit):
+   ### Full validation for all Lambdas (recommended before commit):
    ```bash
    hatch run test
-   # Runs: format + lint + typecheck + pytest
+   # Runs: format + lint + typecheck + pytest (all Lambdas)
    ```
 
    ### Quick test iteration (skip static analysis):
    ```bash
    hatch run test-only
+   # Just runs pytest for all Lambdas
    ```
 
-   ### Run tests for a specific Lambda:
+   ### Full validation for specific Lambda:
    ```bash
    hatch run adder:test
+   # Runs: format + lint + typecheck + pytest (JUST adder)
+   
    hatch run multiplier:test
+   # Runs: format + lint + typecheck + pytest (JUST multiplier)
+   ```
+
+   ### Quick test for specific Lambda:
+   ```bash
+   hatch run adder:test-only
+   hatch run multiplier:test-only
    ```
    ```
 
