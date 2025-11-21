@@ -167,8 +167,9 @@ features = ["adder", "multiplier", "dev"]
 format = "ruff format src tests"
 lint = "ruff check src tests"
 typecheck = "basedpyright src tests"
-# Note: 'test' is defined in Makefile as composite command
-# For direct hatch usage: hatch run pytest
+test-only = "pytest"
+# Full validation - runs everything (recommended before commit)
+test = ["format", "lint", "typecheck", "test-only"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
@@ -363,70 +364,55 @@ docker build -f docker/adder.Dockerfile --progress=plain -t adder-lambda:latest 
 
 ### Phase 4: Update Development Workflow
 
-**New Makefile:**
+**Development commands are managed through Hatch scripts (no Makefile needed).**
 
-```makefile
-.PHONY: format lint typecheck test-only test test-adder test-multiplier
-.PHONY: build-adder build-multiplier build-all
+All commands are defined in `pyproject.toml` under `[tool.hatch.envs.*.scripts]`.
 
-# Individual static analysis commands (for targeted fixes)
-format:
-	hatch run ruff format src tests
-
-lint:
-	hatch run ruff check src tests
-
-typecheck:
-	hatch run basedpyright src tests
-
-# Quick test run - EXPLICITLY bypassing static analysis
-test-only:
-	hatch run pytest
-
-# Lambda-specific tests (also bypass static analysis for speed)
-test-adder:
-	hatch run adder:test
-
-test-multiplier:
-	hatch run multiplier:test
-
-# Full validation - runs everything (recommended before commit)
-test: format lint typecheck test-only
-
-# Docker builds
-build-adder:
-	docker build -f docker/adder.Dockerfile -t adder-lambda .
-
-build-multiplier:
-	docker build -f docker/multiplier.Dockerfile -t multiplier-lambda .
-
-build-all: build-adder build-multiplier
-```
-
-**Usage examples:**
+**Common Development Commands:**
 
 ```bash
-# Full validation (format + lint + typecheck + tests) - DEFAULT
-make test
+# Full validation (format + lint + typecheck + tests) - RECOMMENDED
+hatch run test
 
 # Quick test iteration (skip static analysis)
-make test-only
+hatch run test-only
 
-# Test specific Lambda
-make test-adder
+# Individual static analysis commands
+hatch run format        # Format code
+hatch run lint          # Check linting
+hatch run typecheck     # Type checking
 
-# Fix formatting
-make format
+# Lambda-specific tests
+hatch run adder:test
+hatch run multiplier:test
 
-# Check linting
-make lint
+# Docker builds (using Hatch scripts)
+hatch run adder:build-docker
+hatch run multiplier:build-docker
+```
 
-# Type checking
-make typecheck
+**Why no Makefile?**
 
-# Build Docker images
-make build-adder
-make build-all
+- ✅ Single source of truth (all in pyproject.toml)
+- ✅ Cross-platform (works on Windows without make)
+- ✅ Modern Python ecosystem standard
+- ✅ Integrated with Hatch environments
+- ✅ One less file to maintain
+
+**Optional: Shell Aliases**
+
+If you want shorter commands, add to your shell profile:
+
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+alias ht='hatch run'
+```
+
+Then use:
+```bash
+ht test
+ht format
+ht adder:test
 ```
 
 ## File Changes Checklist
@@ -442,11 +428,11 @@ make build-all
 - [ ] Create `docker/` directory
 - [ ] Create `docker/adder.Dockerfile`
 - [ ] Create `docker/multiplier.Dockerfile`
-- [ ] Update `Makefile` with Hatch commands
 - [ ] Update `README.md` with new structure and Hatch commands (see Phase 5)
 - [ ] Remove `workspaces/` directory
 - [ ] Remove old workspace `pyproject.toml` files
 - [ ] Remove `uv.lock`
+- [ ] Remove `Makefile` (replaced by Hatch scripts)
 
 ## Phase 5: Update Documentation
 
@@ -494,22 +480,17 @@ Replace UV-specific content with Hatch instructions:
 
    ### Full validation (recommended before commit):
    ```bash
-   make test
+   hatch run test
    # Runs: format + lint + typecheck + pytest
    ```
 
    ### Quick test iteration (skip static analysis):
    ```bash
-   make test-only
-   # or
-   hatch run pytest
+   hatch run test-only
    ```
 
    ### Run tests for a specific Lambda:
    ```bash
-   make test-adder
-   make test-multiplier
-   # or
    hatch run adder:test
    hatch run multiplier:test
    ```
@@ -521,7 +502,7 @@ Replace UV-specific content with Hatch instructions:
 
    ### Full Validation (before commit)
    ```bash
-   make test
+   hatch run test
    # Runs format + lint + typecheck + tests
    ```
 
@@ -529,15 +510,11 @@ Replace UV-specific content with Hatch instructions:
 
    **Linting**
    ```bash
-   make lint
-   # or
    hatch run lint
    ```
 
    **Type Checking**
    ```bash
-   make typecheck
-   # or
    hatch run typecheck
    ```
 
@@ -548,14 +525,26 @@ Replace UV-specific content with Hatch instructions:
 
    **Formatting**
    ```bash
-   make format
-   # or
    hatch run format
    ```
 
    **Quick test-only (skip static analysis)**
    ```bash
-   make test-only
+   hatch run test-only
+   ```
+
+   ### Optional: Shell Aliases
+
+   For shorter commands, add to your `~/.bashrc` or `~/.zshrc`:
+   ```bash
+   alias ht='hatch run'
+   ```
+
+   Then use:
+   ```bash
+   ht test
+   ht format
+   ht adder:test
    ```
    ```
 
@@ -990,10 +979,11 @@ on:
 - **Phase 1 (Restructure):** 1-2 hours
 - **Phase 2 (Config):** 1 hour
 - **Phase 3 (Docker):** 2-3 hours
-- **Phase 4 (Workflow):** 1 hour
+- **Phase 4 (Workflow):** 30 minutes (just pyproject.toml, no Makefile)
+- **Phase 5 (Documentation):** 30 minutes
 - **Testing & Validation:** 2-3 hours
 
-**Total:** 7-10 hours
+**Total:** 7-9 hours
 
 ## Recommendation
 
