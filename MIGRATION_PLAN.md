@@ -1,8 +1,10 @@
 # Migration Plan: UV Workspaces to Single Hatch Project
 
-## Revised Approach: Single Project with Hatch Environments
+## Revised Approach: Single Project with Hatch Environments (Using UV Installer)
 
 **Key Insight:** Instead of treating adder and multiplier as separate workspace projects, treat them as **different Lambda functions within a single project**, managed through Hatch environments and build configurations.
+
+**Performance Optimization:** Hatch is configured to use UV as the installer for blazing fast dependency installation (10-100x faster than pip).
 
 ## Current State
 
@@ -17,7 +19,7 @@ uv.lock           # Unified lock file
 
 ## Target State
 
-**Single Hatch Project:**
+**Single Hatch Project (with UV installer):**
 ```
 src/
   lambdas/
@@ -31,7 +33,7 @@ tests/
 docker/
   adder.Dockerfile
   multiplier.Dockerfile
-pyproject.toml    # Single project config with Hatch environments
+pyproject.toml    # Single project config with Hatch environments + UV installer
 ```
 
 ## Why This Approach is Better
@@ -41,13 +43,15 @@ pyproject.toml    # Single project config with Hatch environments
 1. **Unified Dependency Management:**
    - All shared dependencies defined once
    - Lambda-specific dependencies in optional dependency groups
-   - Single lock file (via pip-compile or similar)
+   - **UV installer**: 10-100x faster than pip for dependency resolution and installation
+   - Single lock file (uv.lock) for reproducible builds
    - Easier to keep dependencies in sync
 
 2. **Hatch Environment Matrix:**
    - Use environments to isolate Lambda-specific dependencies
    - Example: `hatch env create adder` vs `hatch env create multiplier`
    - Can run tests per-Lambda: `hatch run adder:test`
+   - **UV-powered**: Environment creation is blazing fast
 
 3. **Simplified Docker Builds:**
    - Single source tree to copy
@@ -66,7 +70,7 @@ pyproject.toml    # Single project config with Hatch environments
 
 ### Comparison Table
 
-| Aspect | UV Workspaces | Single Hatch Project |
+| Aspect | UV Workspaces | Single Hatch Project (with UV) |
 |--------|---------------|---------------------|
 | **Shared Dependencies** | Must duplicate or use workspace deps | Defined once in [project.dependencies] |
 | **Lambda-specific Deps** | Per-project pyproject.toml | Optional dependency groups |
@@ -75,6 +79,7 @@ pyproject.toml    # Single project config with Hatch environments
 | **Docker Build** | Copy workspace structure | Copy single src tree, build specific target |
 | **Config Files** | 3 pyproject.toml files | 1 pyproject.toml file |
 | **Version Management** | Manual sync across projects | Single version for all |
+| **Installation Speed** | UV-fast | UV-fast (Hatch uses UV installer) |
 
 ## Migration Strategy
 
@@ -145,8 +150,22 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/lambdas"]
 
+# Default dev environment with all dependencies
+[tool.hatch.envs.default]
+installer = "uv"  # Use UV for fast dependency installation
+features = ["adder", "multiplier", "dev"]
+[tool.hatch.envs.default.scripts]
+# Individual commands
+format = "ruff format src tests"
+lint = "ruff check src tests"
+typecheck = "basedpyright src tests"
+test-only = "pytest"
+# Full validation - runs everything (recommended before commit)
+test = ["format", "lint", "typecheck", "test-only"]
+
 # Environment for adder Lambda
 [tool.hatch.envs.adder]
+installer = "uv"  # Use UV for fast dependency installation
 features = ["adder"]
 [tool.hatch.envs.adder.scripts]
 test-only = "pytest tests/lambdas/adder -v"
@@ -160,6 +179,7 @@ build-docker = "docker build -f docker/adder.Dockerfile -t adder-lambda ."
 
 # Environment for multiplier Lambda
 [tool.hatch.envs.multiplier]
+installer = "uv"  # Use UV for fast dependency installation
 features = ["multiplier"]
 [tool.hatch.envs.multiplier.scripts]
 test-only = "pytest tests/lambdas/multiplier -v"
@@ -170,18 +190,6 @@ test = [
     "test-only",
 ]
 build-docker = "docker build -f docker/multiplier.Dockerfile -t multiplier-lambda ."
-
-# Default dev environment with all dependencies
-[tool.hatch.envs.default]
-features = ["adder", "multiplier", "dev"]
-[tool.hatch.envs.default.scripts]
-# Individual commands
-format = "ruff format src tests"
-lint = "ruff check src tests"
-typecheck = "basedpyright src tests"
-test-only = "pytest"
-# Full validation - runs everything (recommended before commit)
-test = ["format", "lint", "typecheck", "test-only"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
@@ -194,47 +202,54 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "C", "B", "N", "ANN"]
-ignore = []
+ignore = ["ANN401"]  # Allow Any type for Lambda context and similar dynamic types
+
+[tool.basedpyright]
+typeCheckingMode = "standard"
+reportExplicitAny = false  # Allow Any for Lambda context and dynamic event data
 ```
 
 ### Phase 3: Docker Build Strategy
 
-**Selected Strategy: Requirements.txt Export with Build Optimizations**
+**Selected Strategy: Requirements.txt Export with Build Optimizations (UV-powered)**
 
-This approach uses Hatch for dependency management while adopting advanced Docker techniques for optimal builds.
+This approach uses Hatch (with UV installer) for dependency management while adopting advanced Docker techniques for optimal builds.
 
 **Key Techniques from Best Practices:**
 
 | Technique | Benefit |
 |-----------|---------|
+| **UV Installer in Hatch** | 10-100x faster dependency resolution than pip |
 | **Build Cache Mounts** | Faster rebuilds by caching dependencies |
 | **Multi-stage with Test** | Run tests during build, fail fast |
 | **Bind Mounts** | Don't copy files into layers unnecessarily |
 | **Parameterized Versions** | Easy to update tool versions |
 | **Minimal Layer Copying** | Only production code in final image |
 
-**Optimized Dockerfile Template:**
+**Optimized Dockerfile Template (UV-enabled Hatch):**
 
 ```dockerfile
 # docker/adder.Dockerfile
+ARG UV_VERSION=0.9.10
 ARG HATCH_VERSION=1.13.0
 ARG PYTHON_VERSION=3.12
 
 FROM python:${PYTHON_VERSION}-slim AS base
 
-# Install hatch once in base layer
-RUN pip install hatch==${HATCH_VERSION}
+# Install UV first (faster than pip), then Hatch
+RUN pip install uv==${UV_VERSION} && \
+    uv pip install --system hatch==${HATCH_VERSION}
 
 WORKDIR /build
 
-# Test stage - runs tests during build
+# Test stage - runs tests during build (UV-powered for speed)
 FROM base AS test
 
 # Mount source files (don't copy into layer)
 RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=src,target=src \
     --mount=type=bind,source=tests,target=tests \
-    --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=cache,target=/root/.cache \
     hatch env create adder && \
     hatch run adder:test
 
@@ -248,7 +263,7 @@ RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
 # Production stage
 FROM public.ecr.aws/lambda/python:${PYTHON_VERSION} AS production
 
-# Install dependencies with cache mount
+# Install dependencies with cache mount (UV could be used here too for even faster install)
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,from=builder,source=requirements.txt,target=requirements.txt \
     pip install -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
@@ -263,16 +278,19 @@ COPY src/lambdas/adder ${LAMBDA_TASK_ROOT}/lambdas/adder
 CMD [ "lambdas.adder.main.handler" ]
 ```
 
-**For multiplier:**
+**For multiplier (UV-enabled):**
 
 ```dockerfile
 # docker/multiplier.Dockerfile
+ARG UV_VERSION=0.9.10
 ARG HATCH_VERSION=1.13.0
 ARG PYTHON_VERSION=3.12
 
 FROM python:${PYTHON_VERSION}-slim AS base
 
-RUN pip install hatch==${HATCH_VERSION}
+# Install UV first, then Hatch
+RUN pip install uv==${UV_VERSION} && \
+    uv pip install --system hatch==${HATCH_VERSION}
 
 WORKDIR /build
 
@@ -281,7 +299,7 @@ FROM base AS test
 RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=src,target=src \
     --mount=type=bind,source=tests,target=tests \
-    --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=cache,target=/root/.cache \
     hatch env create multiplier && \
     hatch run multiplier:test
 
@@ -304,20 +322,31 @@ CMD [ "lambdas.multiplier.main.handler" ]
 
 **Advanced Features Explained:**
 
-1. **Build Arguments for Version Control:**
+1. **UV + Hatch Integration:**
    ```dockerfile
+   RUN pip install uv==${UV_VERSION} && \
+       uv pip install --system hatch==${HATCH_VERSION}
+   ```
+   - Install UV first for its speed benefits
+   - Use UV to install Hatch (faster than pip)
+   - Hatch configured with `installer = "uv"` in pyproject.toml
+   - Environment creation is 10-100x faster
+
+2. **Build Arguments for Version Control:**
+   ```dockerfile
+   ARG UV_VERSION=0.9.10
    ARG HATCH_VERSION=1.13.0
    ARG PYTHON_VERSION=3.12
    ```
    - Easy to update tool versions
    - Consistent across stages
-   - Can override at build time: `docker build --build-arg HATCH_VERSION=1.14.0`
+   - Can override at build time: `docker build --build-arg UV_VERSION=0.10.0`
 
-2. **Build Cache Mounts:**
+2. **Build Cache Mounts (UV-compatible):**
    ```dockerfile
-   RUN --mount=type=cache,target=/root/.cache/pip \
+   RUN --mount=type=cache,target=/root/.cache \
    ```
-   - Persists pip cache between builds
+   - Persists both pip and UV cache between builds
    - Dramatically faster rebuilds
    - Shares cache across all Docker builds
 
@@ -367,7 +396,9 @@ docker build -f docker/adder.Dockerfile --progress=plain -t adder-lambda:latest 
 
 **Why This Is Better:**
 
-✅ **Faster Builds**: Cache mounts speed up rebuilds significantly
+✅ **Blazing Fast Builds**: UV installer makes dependency installation 10-100x faster
+✅ **Fast Environment Creation**: Hatch + UV creates environments in seconds, not minutes
+✅ **Cached Builds**: Cache mounts speed up rebuilds significantly
 ✅ **Automated Testing**: Tests run during build, catch issues early
 ✅ **Smaller Images**: Bind mounts don't bloat intermediate layers
 ✅ **Flexible**: Can skip test stage when needed
@@ -473,6 +504,7 @@ Replace UV-specific content with Hatch instructions:
    ```markdown
    ## Prerequisites
    - [Hatch](https://hatch.pypa.io/latest/install/) installed
+   - [UV](https://docs.astral.sh/uv/getting-started/installation/) installed (for faster dependency installation)
    ```
 
 2. **Remove UV installation instructions**
@@ -698,7 +730,7 @@ Replace UV-specific content with Hatch instructions:
    ```markdown
    ## Hatch Environments
 
-   This project uses Hatch environments to manage Lambda-specific dependencies:
+   This project uses Hatch environments (with UV installer for speed) to manage Lambda-specific dependencies:
 
    ### Available environments:
    - `default`: All Lambdas + dev tools (linting, testing, type checking)
@@ -1024,16 +1056,17 @@ on:
 
 ## Recommendation
 
-**Proceed with single Hatch project approach** because:
+**Proceed with single Hatch project approach (with UV installer)** because:
 
 ✅ Simpler dependency management
 ✅ Easier to share code between Lambdas
 ✅ Single configuration to maintain
 ✅ Better use of Hatch's environment features
+✅ **UV installer provides 10-100x faster dependency installation**
 ✅ Cleaner project structure
 ✅ Better for your use case than multiple independent projects
 
-This addresses your original concern: **You don't need workspaces at all** - instead, use Hatch environments to manage different Lambda builds from a single unified project.
+This addresses your original concern: **You don't need workspaces at all** - instead, use Hatch environments (powered by UV) to manage different Lambda builds from a single unified project.
 
 ## Next Steps
 
