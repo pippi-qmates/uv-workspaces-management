@@ -163,11 +163,12 @@ build-docker = "docker build -f docker/multiplier.Dockerfile -t multiplier-lambd
 [tool.hatch.envs.default]
 features = ["adder", "multiplier", "dev"]
 [tool.hatch.envs.default.scripts]
-test = "pytest tests -v"
-lint = "ruff check src tests"
+# Individual commands
 format = "ruff format src tests"
+lint = "ruff check src tests"
 typecheck = "basedpyright src tests"
-check = ["format", "lint", "typecheck", "test"]
+# Note: 'test' is defined in Makefile as composite command
+# For direct hatch usage: hatch run pytest
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
@@ -365,37 +366,39 @@ docker build -f docker/adder.Dockerfile --progress=plain -t adder-lambda:latest 
 **New Makefile:**
 
 ```makefile
-.PHONY: format lint typecheck test test-adder test-multiplier check
+.PHONY: format lint typecheck test-only test test-adder test-multiplier
 .PHONY: build-adder build-multiplier build-all
 
-# Development tasks
+# Individual static analysis commands (for targeted fixes)
 format:
-	hatch run format
+	hatch run ruff format src tests
 
 lint:
-	hatch run lint
+	hatch run ruff check src tests
 
 typecheck:
-	hatch run typecheck
+	hatch run basedpyright src tests
 
-test:
-	hatch run test
+# Quick test run - EXPLICITLY bypassing static analysis
+test-only:
+	hatch run pytest
 
+# Lambda-specific tests (also bypass static analysis for speed)
 test-adder:
 	hatch run adder:test
 
 test-multiplier:
 	hatch run multiplier:test
 
-check:
-	hatch run check
+# Full validation - runs everything (recommended before commit)
+test: format lint typecheck test-only
 
 # Docker builds
 build-adder:
-	hatch run adder:build-docker
+	docker build -f docker/adder.Dockerfile -t adder-lambda .
 
 build-multiplier:
-	hatch run multiplier:build-docker
+	docker build -f docker/multiplier.Dockerfile -t multiplier-lambda .
 
 build-all: build-adder build-multiplier
 ```
@@ -403,20 +406,27 @@ build-all: build-adder build-multiplier
 **Usage examples:**
 
 ```bash
-# Run all tests
-hatch run test
+# Full validation (format + lint + typecheck + tests) - DEFAULT
+make test
 
-# Test only adder
-hatch run adder:test
+# Quick test iteration (skip static analysis)
+make test-only
 
-# Build adder Docker image
-hatch run adder:build-docker
+# Test specific Lambda
+make test-adder
 
-# Format code
-hatch run format
+# Fix formatting
+make format
 
-# Run all quality checks
-hatch run check
+# Check linting
+make lint
+
+# Type checking
+make typecheck
+
+# Build Docker images
+make build-adder
+make build-all
 ```
 
 ## File Changes Checklist
@@ -482,15 +492,24 @@ Replace UV-specific content with Hatch instructions:
    ```markdown
    ## Running Tests
 
-   ### Run all tests:
+   ### Full validation (recommended before commit):
    ```bash
-   hatch run test
-   # or
    make test
+   # Runs: format + lint + typecheck + pytest
+   ```
+
+   ### Quick test iteration (skip static analysis):
+   ```bash
+   make test-only
+   # or
+   hatch run pytest
    ```
 
    ### Run tests for a specific Lambda:
    ```bash
+   make test-adder
+   make test-multiplier
+   # or
    hatch run adder:test
    hatch run multiplier:test
    ```
@@ -500,37 +519,43 @@ Replace UV-specific content with Hatch instructions:
    ```markdown
    ## Code Quality
 
-   ### Linting
+   ### Full Validation (before commit)
    ```bash
-   hatch run lint
-   # or
+   make test
+   # Runs format + lint + typecheck + tests
+   ```
+
+   ### Individual Commands
+
+   **Linting**
+   ```bash
    make lint
-   ```
-
-   ### Typecheck
-   ```bash
-   hatch run typecheck
    # or
-   make typecheck
+   hatch run lint
    ```
 
-   ### Auto-fix linting issues
+   **Type Checking**
+   ```bash
+   make typecheck
+   # or
+   hatch run typecheck
+   ```
+
+   **Auto-fix linting issues**
    ```bash
    hatch run ruff check src tests --fix
    ```
 
-   ### Formatting
+   **Formatting**
    ```bash
-   hatch run format
-   # or
    make format
+   # or
+   hatch run format
    ```
 
-   ### Run all checks
+   **Quick test-only (skip static analysis)**
    ```bash
-   hatch run check
-   # or
-   make check
+   make test-only
    ```
    ```
 
