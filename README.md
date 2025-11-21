@@ -19,7 +19,7 @@ A Python Test-Driven Development workspace using `uv` for dependency management,
 
 ### Run all tests (from root):
 ```bash
-uv run pytest
+make test
 ```
 
 ### Run tests for a specific workspace:
@@ -33,7 +33,12 @@ uv run --directory workspaces/multiplier_workspace pytest
 
 ### Linting
 ```bash
-uv run ruff check .
+make lint
+```
+
+### Typecheck
+```bash
+make typecheck
 ```
 
 ### Auto-fix linting issues
@@ -43,7 +48,7 @@ uv run ruff check . --fix
 
 ### Formatting
 ```bash
-uv run ruff format .
+make format
 ```
 
 ## Ruff Configuration
