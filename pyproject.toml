@@ -1,3 +1,7 @@
+# =============================================================================
+# PROJECT METADATA
+# =============================================================================
+
 [project]
 name = "aws-lambdas"
 version = "0.1.0"
@@ -5,20 +9,28 @@ description = "AWS Lambda Functions Collection"
 requires-python = ">=3.12"
 dependencies = []  # No shared runtime dependencies
 
+
 [project.optional-dependencies]
-# Each Lambda declares ALL its dependencies explicitly
-adder = [
-    "aws-lambda-powertools>=3.23.0",
-]
-multiplier = [
-    # multiplier-specific dependencies if any
-]
 # Dev dependencies for local development only
 dev = [
     "basedpyright>=1.34.0",
     "pytest>=8.0.0",
     "ruff>=0.8.0",
 ]
+
+# Lambda-specific dependencies - each Lambda declares ALL its dependencies explicitly
+adder = [
+    "aws-lambda-powertools>=3.23.0",
+]
+
+multiplier = [
+    # Add multiplier-specific dependencies here
+]
+
+
+# =============================================================================
+# BUILD SYSTEM
+# =============================================================================
 
 [build-system]
 requires = ["hatchling"]
@@ -27,51 +39,67 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/lambdas"]
 
-# Default dev environment with all dependencies
+
+# =============================================================================
+# HATCH ENVIRONMENTS - DEFAULT (ALL LAMBDAS)
+# =============================================================================
+
 [tool.hatch.envs.default]
 installer = "uv"
 features = ["adder", "multiplier", "dev"]
+
 [tool.hatch.envs.default.scripts]
-# Individual commands
+# Individual commands for all Lambdas
 format = "ruff format src tests"
 lint = "ruff check src tests"
 typecheck = "basedpyright src tests"
 test-only = "pytest"
+
 # Full validation - runs everything (recommended before commit)
 test = ["format", "lint", "typecheck", "test-only"]
 
-# Environment for adder Lambda
+
+# =============================================================================
+# HATCH ENVIRONMENTS - INDIVIDUAL LAMBDAS
+# =============================================================================
+
 [tool.hatch.envs.adder]
 installer = "uv"
-features = ["adder"]
+features = ["adder", "dev"]
+
 [tool.hatch.envs.adder.scripts]
 test-only = "pytest tests/lambdas/adder -v"
-test = [
-    "ruff format src/lambdas/adder tests/lambdas/adder",
-    "ruff check src/lambdas/adder tests/lambdas/adder",
-    "basedpyright src/lambdas/adder tests/lambdas/adder",
-    "test-only",
-]
+format = "ruff format src/lambdas/adder tests/lambdas/adder"
+lint = "ruff check src/lambdas/adder tests/lambdas/adder"
+typecheck = "basedpyright src/lambdas/adder tests/lambdas/adder"
+test = ["format", "lint", "typecheck", "test-only"]
 build-docker = "docker build -f docker/adder.Dockerfile -t adder-lambda ."
 
-# Environment for multiplier Lambda
+
 [tool.hatch.envs.multiplier]
 installer = "uv"
-features = ["multiplier"]
+features = ["multiplier", "dev"]
+
 [tool.hatch.envs.multiplier.scripts]
 test-only = "pytest tests/lambdas/multiplier -v"
-test = [
-    "ruff format src/lambdas/multiplier tests/lambdas/multiplier",
-    "ruff check src/lambdas/multiplier tests/lambdas/multiplier",
-    "basedpyright src/lambdas/multiplier tests/lambdas/multiplier",
-    "test-only",
-]
+format = "ruff format src/lambdas/multiplier tests/lambdas/multiplier"
+lint = "ruff check src/lambdas/multiplier tests/lambdas/multiplier"
+typecheck = "basedpyright src/lambdas/multiplier tests/lambdas/multiplier"
+test = ["format", "lint", "typecheck", "test-only"]
 build-docker = "docker build -f docker/multiplier.Dockerfile -t multiplier-lambda ."
 
+
+# =============================================================================
+# TOOL CONFIGURATION
+# =============================================================================
+
+# Pytest
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
 
+
+# Ruff - Linter and Formatter
 [tool.ruff]
 line-length = 120
 target-version = "py312"
@@ -87,6 +115,8 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 
+
+# Basedpyright - Type Checker
 [tool.basedpyright]
 typeCheckingMode = "standard"
 reportExplicitAny = false  # Allow Any for Lambda context and dynamic event data
