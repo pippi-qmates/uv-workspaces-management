@@ -25,8 +25,8 @@ make test
 ### Run tests for a specific workspace:
 
 ```bash
-uv run --directory workspaces/adder_workspace pytest
-uv run --directory workspaces/multiplier_workspace pytest
+uv run --directory workspaces/adder pytest
+uv run --directory workspaces/multiplier pytest
 ```
 
 ## Code Quality
@@ -74,8 +74,8 @@ Each workspace is an independent Python package with:
 
 1. Create a new directory under `workspaces/`:
    ```bash
-   mkdir -p workspaces/new_lambda_workspace/src/new_lambda
-   mkdir -p workspaces/new_lambda_workspace/tests
+   mkdir -p workspaces/new_lambda/src/new_lambda
+   mkdir -p workspaces/new_lambda/tests
    ```
 
 2. Create `pyproject.toml`:
@@ -114,7 +114,7 @@ Each workspace is an independent Python package with:
 Each workspace can be built and deployed independently:
 
 ```bash
-cd workspaces/adder_workspace
+cd workspaces/adder
 docker build -t adder-lambda .
 docker run -p 9000:8080 adder-lambda
 ```

@@ -12,7 +12,7 @@ members = [
 [[package]]
 name = "adder"
 version = "0.1.0"
-source = { editable = "workspaces/adder_workspace" }
+source = { editable = "workspaces/adder" }
 dependencies = [
     { name = "aws-lambda-powertools" },
 ]
@@ -75,7 +75,7 @@ wheels = [
 [[package]]
 name = "multiplier"
 version = "0.1.0"
-source = { editable = "workspaces/multiplier_workspace" }
+source = { editable = "workspaces/multiplier" }
 
 [[package]]
 name = "nodejs-wheel-binaries"
@@ -154,8 +154,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "adder", editable = "workspaces/adder_workspace" },
-    { name = "multiplier", editable = "workspaces/multiplier_workspace" },
+    { name = "adder", editable = "workspaces/adder" },
+    { name = "multiplier", editable = "workspaces/multiplier" },
 ]
 
 [package.metadata.requires-dev]
