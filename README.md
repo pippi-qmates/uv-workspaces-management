@@ -2,6 +2,8 @@
 
 A Python project using Hatch for dependency management, featuring multiple AWS Lambda functions with **isolated environments for Docker builds** and a **unified environment for development**.
 
+> **📚 Documentation**: The [`docs/`](docs/) folder contains detailed documents explaining the architectural decisions and implementation choices of this spike.
+
 ## Prerequisites
 
 - [Hatch](https://hatch.pypa.io/latest/install/) installed
