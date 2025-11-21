@@ -5,39 +5,13 @@ A Python Test-Driven Development project using Hatch (with UV) for dependency ma
 ## Prerequisites
 
 - [Hatch](https://hatch.pypa.io/latest/install/) installed
-- [UV](https://docs.astral.sh/uv/getting-started/installation/) installed (for faster dependency installation)
+- [UV](https://docs.astral.sh/uv/getting-started/installation/) installed
 
 ## Setup
+No setup needed other than installing Hatch and UV systemwide.
+Hatch automatically creates needed environments when you run any hatch command.
 
-1. **Install Hatch** (if not already installed):
-   
-   **macOS/Linux:**
-   ```bash
-   pipx install hatch
-   ```
-   
-   **Windows:**
-   ```powershell
-   pipx install hatch
-   ```
-
-2. **Clone the repository** and start working:
-   ```bash
-   git clone <repository-url>
-   cd uv-workspaces-management
-   ```
-
-3. **No manual environment creation needed!**
-   
-   Hatch automatically creates environments when you run commands:
-   ```bash
-   hatch run test  # Creates default env and runs tests
-   ```
-   
-   You can optionally pre-create environments:
-   ```bash
-   hatch env create  # Creates the default environment
-   ```
+---
 
 ## Running Tests
 
@@ -68,54 +42,75 @@ hatch run adder:test-only
 hatch run multiplier:test-only
 ```
 
+---
+
 ## Code Quality
+Linting, formatting and type checking are performed automatically also during the test commands.
 
-### Full Validation (before commit)
-```bash
-hatch run test
-# Runs format + lint + typecheck + tests
-```
-
-### Individual Commands
-
-**Linting**
-```bash
-hatch run lint
-```
-
-**Type Checking**
+### Type Checking
 ```bash
 hatch run typecheck
 ```
 
-**Auto-fix linting issues**
+### Linting
+```bash
+hatch run lint
+```
+
+### Auto-fix linting issues
 ```bash
 hatch run ruff check src tests --fix
 ```
 
-**Formatting**
+### Formatting
 ```bash
 hatch run format
 ```
 
-**Quick test-only (skip static analysis)**
+---
+
+## Docker Build
+
+Each Lambda can be built and deployed independently:
+
+### Build Lambda image
 ```bash
-hatch run test-only
+# Build adder
+docker build -f docker/adder.Dockerfile -t adder-lambda .
+
+# Build multiplier
+docker build -f docker/multiplier.Dockerfile -t multiplier-lambda .
+
+# Or use Hatch scripts
+hatch run adder:build-docker
+hatch run multiplier:build-docker
 ```
 
-### Optional: Shell Aliases
-
-For shorter commands, add to your `~/.bashrc` or `~/.zshrc`:
+### Test Lambda locally
 ```bash
-alias ht='hatch run'
+# Run the Lambda container
+docker run -p 9000:8080 adder-lambda
+
+# In another terminal, invoke it
+curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" \
+  -d '{"a": 5, "b": 3}'
 ```
 
-Then use:
+### Build without tests (faster)
 ```bash
-ht test
-ht format
-ht adder:test
+docker build -f docker/adder.Dockerfile \
+  --target production \
+  -t adder-lambda .
 ```
+
+### Advanced: Cache usage
+Docker build cache mounts significantly speed up rebuilds. The cache persists across builds automatically.
+
+---
+
+# Additional Project info
+
+---
 
 ## Ruff Configuration
 
@@ -178,7 +173,7 @@ Each Lambda is managed through Hatch environments, allowing:
        "test-only",
    ]
    build-docker = "docker build -f docker/new-lambda.Dockerfile -t new-lambda ."
-   
+
    # Add to default env features
    [tool.hatch.envs.default]
    features = ["adder", "multiplier", "new-lambda", "dev"]  # Add here
@@ -195,45 +190,8 @@ Each Lambda is managed through Hatch environments, allowing:
    ```bash
    hatch run new-lambda:test
    ```
-   
+
    Note: The environment will be created automatically on first run.
-
-## Docker Deployment
-
-Each Lambda can be built and deployed independently:
-
-### Build Lambda image
-```bash
-# Build adder
-docker build -f docker/adder.Dockerfile -t adder-lambda .
-
-# Build multiplier
-docker build -f docker/multiplier.Dockerfile -t multiplier-lambda .
-
-# Or use Hatch scripts
-hatch run adder:build-docker
-hatch run multiplier:build-docker
-```
-
-### Test Lambda locally
-```bash
-# Run the Lambda container
-docker run -p 9000:8080 adder-lambda
-
-# In another terminal, invoke it
-curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" \
-  -d '{"a": 5, "b": 3}'
-```
-
-### Build without tests (faster)
-```bash
-docker build -f docker/adder.Dockerfile \
-  --target production \
-  -t adder-lambda .
-```
-
-### Advanced: Cache usage
-Docker build cache mounts significantly speed up rebuilds. The cache persists across builds automatically.
 
 ## Hatch Environments
 
