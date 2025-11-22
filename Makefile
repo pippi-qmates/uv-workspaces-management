@@ -1,15 +1,10 @@
-# =============================================================================
-# UV Workspaces - Makefile for AWS Lambda Functions
-# =============================================================================
-
-# Set default target (runs when you type just 'make')
 .DEFAULT_GOAL := help
 
 .PHONY: help install sync clean
 .PHONY: format lint typecheck test test-only test-e2e
 
 # =============================================================================
-# Development Commands (Unified Environment)
+# General development Commands (Unified Environment)
 # =============================================================================
 
 format:
@@ -30,31 +25,26 @@ test-e2e:
 	uv run pytest tests/e2e -v
 
 # =============================================================================
-# Per-Lambda Commands (Pattern Rules)
+# Per-Package development Commands (Pattern Rules)
 # =============================================================================
 
-# Format specific lambda
 format-%:
 	uv run ruff format packages/$* tests/packages/$*
 
-# Lint specific lambda
 lint-%:
 	uv run ruff check packages/$* tests/packages/$*
 
-# Type check specific lambda
 typecheck-%:
 	uv run basedpyright packages/$* tests/packages/$*
 
-# Test specific lambda without checks
 test-only-%:
 	uv run pytest tests/packages/$* -v
 
-# Test specific lambda with all checks
 test-%: format-% lint-% typecheck-%
 	uv run pytest tests/packages/$* -v
 
 # =============================================================================
-# Explicit Setup (not necessary by default)
+# Environments commands (not necessary by default)
 # =============================================================================
 
 install:
@@ -77,27 +67,22 @@ clean:
 help:
 	@echo "Available targets:"
 	@echo ""
-	@echo "Development commands:"
+	@echo "General development commands:"
 	@echo "  format           - Format all code"
 	@echo "  lint             - Lint all code"
 	@echo "  typecheck        - Type check all code"
 	@echo "  test             - Run all checks and tests"
-	@echo "  test-only        - Run all unit tests"
+	@echo "  test-only        - Run only tests"
 	@echo "  test-e2e         - Run E2E tests (requires docker-compose up -d)"
 	@echo ""
-	@echo "Per-lambda commands:"
-	@echo "  format-<lambda>     - Format lambda code"
-	@echo "  lint-<lambda>       - Lint lambda code"
-	@echo "  typecheck-<lambda>  - Type check lambda code"
-	@echo "  test-<lambda>       - Run all checks and tests for lambda"
-	@echo "  test-only-<lambda>  - Run unit tests for lambda only"
+	@echo "Per-package development commands:"
+	@echo "  format-<package>     - Format specific package code"
+	@echo "  lint-<package>       - Lint specific package code"
+	@echo "  typecheck-<package>  - Type check specific package code"
+	@echo "  test-<package>       - Run all checks and tests for specific package"
+	@echo "  test-only-<package>  - Run only tests for specific package"
 	@echo ""
-	@echo "Examples:"
-	@echo "  make test-adder"
-	@echo "  make test-only-multiplier"
-	@echo "  make lint-multiplier"
-	@echo ""
-	@echo "Explicit Setup (not necessary by default):"
+	@echo "Environments commands (not necessary by default):"
 	@echo "  install          - Install all dependencies"
 	@echo "  sync             - Sync dependencies"
 	@echo "  clean            - Remove virtual environments and caches"

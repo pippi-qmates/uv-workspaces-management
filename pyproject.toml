@@ -1,36 +1,23 @@
-# =============================================================================
-# PROJECT METADATA
-# =============================================================================
-
 [project]
 name = "aws-lambdas"
 version = "0.1.0"
 description = "AWS Lambda Functions Collection"
 requires-python = ">=3.12"
-dependencies = []  # Workspace members don't need to be listed here
+dependencies = []
 
 
 [project.optional-dependencies]
-# Dev dependencies for local development only
 dev = [
     "basedpyright>=1.34.0",
-    "httpx>=0.27.0",  # For E2E tests (typed library)
+    "httpx>=0.27.0",
     "pytest>=8.0.0",
     "ruff>=0.8.0",
 ]
 
 
-# =============================================================================
-# UV WORKSPACE CONFIGURATION
-# =============================================================================
-
 [tool.uv.workspace]
 members = ["packages/adder", "packages/multiplier"]
 
-
-# =============================================================================
-# TOOL CONFIGURATION
-# =============================================================================
 
 # Pytest
 [tool.pytest.ini_options]
