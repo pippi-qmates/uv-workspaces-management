@@ -1,6 +1,6 @@
 from typing import Any
 
-from lambdas.adder.custom.add import custom_add
+from adder.custom.add import custom_add
 
 
 def handler(event: dict[str, Any], _context: Any) -> dict[str, int]:

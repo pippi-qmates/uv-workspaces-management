@@ -16,7 +16,7 @@ This document explains how to run and test Lambda functions locally using Docker
 ### Prerequisites
 
 - Docker and Docker Compose installed
-- Hatch environment ready (run any `hatch run` command to auto-create)
+- UV environment ready (run `make install` or `uv sync --all-extras`)
 
 ### Start Lambda Containers
 
@@ -31,7 +31,9 @@ The containers will remain running between test runs for faster iteration. This 
 
 ```bash
 # Run end-to-end workflow tests
-hatch run test-e2e
+make test-e2e
+# or
+uv run pytest tests/e2e -v
 ```
 
 E2E tests simulate Step Functions orchestration by calling Lambda containers in sequence and asserting workflow results. See `tests/e2e/test_workflow.py` for examples.
@@ -54,7 +56,7 @@ docker-compose down
 **Rationale**:
 - Simpler workflow: One command does everything
 - Docker Compose caches builds efficiently
-- No need for separate `build-docker` Hatch commands
+- Makefile provides shortcuts: `make docker-adder` if needed
 - Standard Docker workflow developers already know
 
 ### 2. Containers Stay Running Between Tests
@@ -69,7 +71,7 @@ docker-compose down
 
 ### 3. E2E Tests Separate from Unit Tests
 
-**Decision**: `hatch run test` runs only unit tests, `hatch run test-e2e` runs E2E tests.
+**Decision**: `make test` runs only unit tests, `make test-e2e` runs E2E tests.
 
 **Rationale**:
 - **Fast feedback**: Unit tests complete in milliseconds
@@ -79,10 +81,10 @@ docker-compose down
 
 ### 4. Python E2E Tests Over Other Tools
 
-**Decision**: Use pytest with `requests` library to orchestrate Lambda calls.
+**Decision**: Use pytest with `httpx` library to orchestrate Lambda calls.
 
 **Rationale**:
-- **Minimal dependencies**: Only adds `requests` to dev dependencies
+- **Minimal dependencies**: Only adds `httpx` to dev dependencies
 - **Familiar tools**: Already using pytest for unit tests
 - **Full control**: Explicitly code workflow logic (educational)
 - **Flexible**: Easy to add assertions, retries, complex workflows

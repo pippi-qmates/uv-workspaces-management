@@ -7,7 +7,7 @@ name = "aws-lambdas"
 version = "0.1.0"
 description = "AWS Lambda Functions Collection"
 requires-python = ">=3.12"
-dependencies = []  # No shared runtime dependencies
+dependencies = []  # Workspace members don't need to be listed here
 
 
 [project.optional-dependencies]
@@ -19,83 +19,13 @@ dev = [
     "ruff>=0.8.0",
 ]
 
-# Lambda-specific dependencies - each Lambda declares ALL its dependencies explicitly
-adder = [
-    "aws-lambda-powertools>=3.23.0",
-]
-
-multiplier = [
-    # Add multiplier-specific dependencies here
-]
-
 
 # =============================================================================
-# BUILD SYSTEM
+# UV WORKSPACE CONFIGURATION
 # =============================================================================
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/lambdas"]
-
-
-# =============================================================================
-# HATCH ENVIRONMENTS - DEFAULT (ALL LAMBDAS)
-# =============================================================================
-
-[tool.hatch.envs.default]
-installer = "uv"
-path = ".venv"
-features = ["adder", "multiplier", "dev"]
-
-[tool.hatch.envs.default.scripts]
-# Individual commands for all Lambdas
-format = "ruff format src tests"
-lint = "ruff check src tests"
-typecheck = "basedpyright src tests"
-test-only = "pytest tests/lambdas"
-
-# E2E tests (requires docker-compose up -d to be running)
-test-e2e = "pytest tests/e2e -v"
-
-# Full validation - runs everything (recommended before commit)
-test = ["format", "lint", "typecheck", "test-only"]
-
-
-# =============================================================================
-# HATCH ENVIRONMENTS - INDIVIDUAL LAMBDAS
-# =============================================================================
-
-[tool.hatch.envs.adder]
-template = "adder"  # Self-referential: don't inherit from default
-installer = "uv"
-path = "src/lambdas/adder/.venv"  # Lambda-specific venv in project
-features = ["adder", "dev"]
-
-[tool.hatch.envs.adder.scripts]
-test-only = "pytest tests/lambdas/adder -v"
-format = "ruff format src/lambdas/adder tests/lambdas/adder"
-lint = "ruff check src/lambdas/adder tests/lambdas/adder"
-typecheck = "basedpyright src/lambdas/adder tests/lambdas/adder"
-test = ["format", "lint", "typecheck", "test-only"]
-build-docker = "docker build -f docker/adder.Dockerfile -t adder-lambda ."
-
-
-[tool.hatch.envs.multiplier]
-template = "multiplier"  # Self-referential: don't inherit from default
-installer = "uv"
-path = "src/lambdas/multiplier/.venv"  # Lambda-specific venv in project
-features = ["multiplier", "dev"]
-
-[tool.hatch.envs.multiplier.scripts]
-test-only = "pytest tests/lambdas/multiplier -v"
-format = "ruff format src/lambdas/multiplier tests/lambdas/multiplier"
-lint = "ruff check src/lambdas/multiplier tests/lambdas/multiplier"
-typecheck = "basedpyright src/lambdas/multiplier tests/lambdas/multiplier"
-test = ["format", "lint", "typecheck", "test-only"]
-build-docker = "docker build -f docker/multiplier.Dockerfile -t multiplier-lambda ."
+[tool.uv.workspace]
+members = ["lambdas/adder", "lambdas/multiplier"]
 
 
 # =============================================================================
@@ -104,7 +34,7 @@ build-docker = "docker build -f docker/multiplier.Dockerfile -t multiplier-lambd
 
 # Pytest
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["lambdas"]
 testpaths = ["tests"]
 
 
@@ -112,7 +42,7 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-src = ["src"]
+src = ["lambdas"]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "C", "B", "N", "ANN"]
@@ -129,3 +59,4 @@ line-ending = "auto"
 [tool.basedpyright]
 typeCheckingMode = "standard"
 reportExplicitAny = false  # Allow Any for Lambda context and dynamic event data
+extraPaths = ["lambdas"]

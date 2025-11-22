@@ -2,8 +2,11 @@ services:
   adder:
     build:
       context: .
-      dockerfile: docker/adder.Dockerfile
+      dockerfile: docker/lambda.Dockerfile
+      args:
+        LAMBDA_NAME: adder
     image: adder-lambda
+    command: ["adder.main.handler"]
     ports:
       - "9001:8080"
     networks:
@@ -12,8 +15,11 @@ services:
   multiplier:
     build:
       context: .
-      dockerfile: docker/multiplier.Dockerfile
+      dockerfile: docker/lambda.Dockerfile
+      args:
+        LAMBDA_NAME: multiplier
     image: multiplier-lambda
+    command: ["multiplier.main.handler"]
     ports:
       - "9002:8080"
     networks:

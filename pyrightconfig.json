@@ -1,0 +1,5 @@
+{
+  "extraPaths": ["lambdas"],
+  "typeCheckingMode": "standard",
+  "reportExplicitAny": false
+}
