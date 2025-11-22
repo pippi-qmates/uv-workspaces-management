@@ -13,16 +13,16 @@
 # =============================================================================
 
 format:
-	uv run ruff format lambdas tests
+	uv run ruff format packages tests
 
 lint:
-	uv run ruff check lambdas tests
+	uv run ruff check packages tests
 
 typecheck:
-	uv run basedpyright lambdas tests
+	uv run basedpyright packages tests
 
 test-only:
-	uv run pytest tests/lambdas -v
+	uv run pytest tests/packages -v
 
 test: format lint typecheck test-only
 
@@ -35,23 +35,23 @@ test-e2e:
 
 # Format specific lambda
 format-%:
-	uv run ruff format lambdas/$* tests/lambdas/$*
+	uv run ruff format packages/$* tests/packages/$*
 
 # Lint specific lambda
 lint-%:
-	uv run ruff check lambdas/$* tests/lambdas/$*
+	uv run ruff check packages/$* tests/packages/$*
 
 # Type check specific lambda
 typecheck-%:
-	uv run basedpyright lambdas/$* tests/lambdas/$*
+	uv run basedpyright packages/$* tests/packages/$*
 
 # Test specific lambda without checks
 test-only-%:
-	uv run pytest tests/lambdas/$* -v
+	uv run pytest tests/packages/$* -v
 
 # Test specific lambda with all checks
 test-%: format-% lint-% typecheck-%
-	uv run pytest tests/lambdas/$* -v
+	uv run pytest tests/packages/$* -v
 
 # =============================================================================
 # Explicit Setup (not necessary by default)
@@ -65,7 +65,7 @@ sync:
 
 clean:
 	rm -rf .venv
-	find lambdas -type d -name .venv -exec rm -rf {} + 2>/dev/null || true
+	find packages -type d -name .venv -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .ruff_cache -exec rm -rf {} + 2>/dev/null || true

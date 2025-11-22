@@ -27,12 +27,12 @@ ARG LAMBDA_NAME
 # Copy workspace files to export requirements for specific lambda only
 COPY pyproject.toml .
 COPY uv.lock .
-COPY lambdas/${LAMBDA_NAME}/pyproject.toml lambdas/${LAMBDA_NAME}/
+COPY packages/${LAMBDA_NAME}/pyproject.toml packages/${LAMBDA_NAME}/
 
 # Export only lambda's dependencies (no dev dependencies, no editable installs)
 # Filter out the local package reference
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv export --package ${LAMBDA_NAME} --no-dev --no-hashes --no-editable | grep -v "^\\./lambdas/${LAMBDA_NAME}" > requirements.txt
+    uv export --package ${LAMBDA_NAME} --no-dev --no-hashes --no-editable | grep -v "^\\./packages/${LAMBDA_NAME}" > requirements.txt
 
 # Production stage
 FROM public.ecr.aws/lambda/python:${PYTHON_VERSION} AS production
@@ -46,7 +46,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r /requirements.txt --target "${LAMBDA_TASK_ROOT}"
 
 # Copy only specific lambda source code
-COPY lambdas/${LAMBDA_NAME} ${LAMBDA_TASK_ROOT}/${LAMBDA_NAME}
+COPY packages/${LAMBDA_NAME} ${LAMBDA_TASK_ROOT}/${LAMBDA_NAME}
 
 # CMD is specified in docker-compose.yml per service
 # This allows the same Dockerfile to build different lambda handlers

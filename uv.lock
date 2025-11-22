@@ -12,7 +12,7 @@ members = [
 [[package]]
 name = "adder"
 version = "0.1.0"
-source = { virtual = "lambdas/adder" }
+source = { virtual = "packages/adder" }
 dependencies = [
     { name = "aws-lambda-powertools" },
 ]
@@ -166,7 +166,7 @@ wheels = [
 [[package]]
 name = "multiplier"
 version = "0.1.0"
-source = { virtual = "lambdas/multiplier" }
+source = { virtual = "packages/multiplier" }
 
 [[package]]
 name = "nodejs-wheel-binaries"
