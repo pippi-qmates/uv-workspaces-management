@@ -58,7 +58,7 @@ make test-only-multiplier   # Just pytest for multiplier
 ### End-to-End tests:
 ```bash
 # 1. Start the services
-docker-compose up -d
+docker-compose up --build -d
 # 2. Run E2E tests (tests actual Docker containers)
 make test-e2e
 # 3. Stop the services
@@ -203,6 +203,7 @@ make sync
 ### Add a dev dependency (pytest, ruff, etc.)
 ```bash
 # Edit root pyproject.toml [project.optional-dependencies.dev]
+uv add --dev "<lib>"
 # Then run any command (auto-syncs):
 make test
 # Or manually sync:
