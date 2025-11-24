@@ -192,7 +192,8 @@ uv sync --all-extras
 
 ### Add a dependency to a lambda
 ```bash
-# Edit lambdas/adder/pyproject.toml to add dependency
+# Edit lambdas/adder/pyproject.toml to add dependency or use uv command 
+uv add --package adder "<lib>"
 # Then run any command (auto-syncs):
 make test-adder
 # Or manually sync:

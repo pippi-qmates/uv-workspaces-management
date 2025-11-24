@@ -47,3 +47,6 @@ line-ending = "auto"
 typeCheckingMode = "standard"
 reportExplicitAny = false  # Allow Any for Lambda context and dynamic event data
 extraPaths = ["packages"]
+
+[dependency-groups]
+dev = []
