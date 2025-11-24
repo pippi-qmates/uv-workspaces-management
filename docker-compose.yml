@@ -6,7 +6,8 @@ services:
       args:
         LAMBDA_NAME: adder
     image: adder-lambda
-    command: ["adder.main.handler"]
+    # Override entrypoint to wrap with RIE for local testing
+    entrypoint: ["/usr/local/bin/aws-lambda-rie", "/lambda-entrypoint.sh"]
     ports:
       - "9001:8080"
     networks:
@@ -19,7 +20,8 @@ services:
       args:
         LAMBDA_NAME: multiplier
     image: multiplier-lambda
-    command: ["multiplier.main.handler"]
+    # Override entrypoint to wrap with RIE for local testing
+    entrypoint: ["/usr/local/bin/aws-lambda-rie", "/lambda-entrypoint.sh"]
     ports:
       - "9002:8080"
     networks:

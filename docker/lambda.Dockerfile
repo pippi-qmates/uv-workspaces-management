@@ -36,6 +36,12 @@ FROM public.ecr.aws/lambda/python:${PYTHON_VERSION} AS production
 
 ARG LAMBDA_NAME
 
+# Create entrypoint wrapper that calls awslambdaric with the handler
+# (Early in build for better caching - only invalidates when LAMBDA_NAME changes)
+RUN echo "#!/bin/sh" > /lambda-entrypoint.sh && \
+    echo "exec python -m awslambdaric ${LAMBDA_NAME}.main.handler" >> /lambda-entrypoint.sh && \
+    chmod +x /lambda-entrypoint.sh
+
 # Install dependencies with cache mount
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,from=builder,source=/build/requirements.txt,target=/requirements.txt \
@@ -44,5 +50,5 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # Copy only specific lambda source code
 COPY packages/${LAMBDA_NAME} ${LAMBDA_TASK_ROOT}/${LAMBDA_NAME}
 
-# CMD is specified in docker-compose.yml per service
-# This allows the same Dockerfile to build different lambda handlers
+# Set entrypoint to our wrapper
+ENTRYPOINT ["/lambda-entrypoint.sh"]
