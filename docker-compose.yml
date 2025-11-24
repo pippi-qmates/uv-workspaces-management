@@ -1,0 +1,32 @@
+services:
+  adder:
+    build:
+      context: .
+      dockerfile: docker/lambda.Dockerfile
+      args:
+        LAMBDA_NAME: adder
+    image: adder-lambda
+    # Override entrypoint to wrap with RIE for local testing
+    entrypoint: ["/usr/local/bin/aws-lambda-rie", "/lambda-entrypoint.sh"]
+    ports:
+      - "9001:8080"
+    networks:
+      - lambda-network
+
+  multiplier:
+    build:
+      context: .
+      dockerfile: docker/lambda.Dockerfile
+      args:
+        LAMBDA_NAME: multiplier
+    image: multiplier-lambda
+    # Override entrypoint to wrap with RIE for local testing
+    entrypoint: ["/usr/local/bin/aws-lambda-rie", "/lambda-entrypoint.sh"]
+    ports:
+      - "9002:8080"
+    networks:
+      - lambda-network
+
+networks:
+  lambda-network:
+    name: lambda-network

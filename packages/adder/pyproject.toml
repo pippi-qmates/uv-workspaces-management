@@ -1,0 +1,8 @@
+[project]
+name = "adder"
+version = "0.1.0"
+description = "Adder Lambda Function"
+requires-python = ">=3.12"
+dependencies = [
+    "aws-lambda-powertools>=3.23.0",
+]

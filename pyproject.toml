@@ -1,48 +1,52 @@
 [project]
-name = "python-tdd-workspace"
+name = "aws-lambdas"
 version = "0.1.0"
-description = "Python TDD Workspace"
-readme = "README.md"
+description = "AWS Lambda Functions Collection"
 requires-python = ">=3.12"
-dependencies = [
-    "adder",
-    "multiplier",
-]
+dependencies = []
 
-[tool.uv.sources]
-adder = { workspace = true }
-multiplier = { workspace = true }
 
-[tool.uv.workspace]
-members = ["workspaces/*"]
-
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "basedpyright>=1.34.0",
+    "httpx>=0.27.0",
     "pytest>=8.0.0",
     "ruff>=0.8.0",
 ]
 
+
+[tool.uv.workspace]
+members = ["packages/adder", "packages/multiplier"]
+
+
+# Pytest
+[tool.pytest.ini_options]
+pythonpath = ["packages"]
+testpaths = ["tests"]
+
+
+# Ruff - Linter and Formatter
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+src = ["packages"]
 
 [tool.ruff.lint]
-select = [
-    "E",
-    "W",
-    "F",
-    "I",
-    "C",
-    "B",
-    "N",
-    "ANN",
-]
-
-ignore = []
+select = ["E", "W", "F", "I", "C", "B", "N", "ANN"]
+ignore = ["ANN401"]  # Allow Any type for Lambda context and similar dynamic types
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+
+
+# Basedpyright - Type Checker
+[tool.basedpyright]
+typeCheckingMode = "standard"
+reportExplicitAny = false  # Allow Any for Lambda context and dynamic event data
+extraPaths = ["packages"]
+
+[dependency-groups]
+dev = []
